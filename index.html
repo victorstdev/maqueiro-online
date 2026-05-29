@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel da Central de Macas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1, h2 { color: #333; }
+        .secao { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* Estilos do Formulário */
+        .form-grupo { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .form-grupo label { font-weight: bold; margin-bottom: 5px; color: #555; }
+        .form-grupo input, .form-grupo select, .form-grupo textarea { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .btn-enviar { background: #28a745; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-enviar:hover { background: #218838; }
+
+        /* Estilos da Fila */
+        #fila { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .card { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .ALTA { border-left-color: #dc3545; }
+        .MEDIA { border-left-color: #ffc107; }
+        .BAIXA { border-left-color: #007bff; }
+        .btn-acao { margin-top: 10px; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-azul { background: #007bff; }
+        .btn-verde { background: #28a745; }
+        .status-badge { font-weight: bold; color: #555; margin-top: 10px; display: inline-block; background: #e9ecef; padding: 3px 8px; border-radius: 4px;}
+    </style>
+</head>
+<body>
+
+    <h1>🏥 Sistema de Gestão de Macas em Tempo Real</h1>
+
+    <div class="secao">
+        <h2>📝 Solicitar Nova Maca</h2>
+        <form id="form-solicitacao">
+            <div class="form-grupo">
+                <label for="origem">Origem (Onde está o paciente?)</label>
+                <input type="text" id="origem" placeholder="Ex: Pronto Socorro - Leito 04" required>
+            </div>
+            
+            <div class="form-grupo">
+                <label for="destino">Destino (Para onde ele vai?)</label>
+                <input type="text" id="destino" placeholder="Ex: Radiologia / Tomografia" required>
+            </div>
+
+            <div class="form-grupo">
+                <label for="prioridade">Prioridade de Atendimento</label>
+                <select id="prioridade" required>
+                    <option value="BAIXA">BAIXA (Eletivo / Alta Hospitalar)</option>
+                    <option value="MEDIA">MÉDIA (Urgência / Exames Internos)</option>
+                    <option value="ALTA">ALTA (Emergência / Centro Cirúrgico)</option>
+                </select>
+            </div>
+
+            <div class="form-grupo">
+                <label for="motivo">Motivo do Chamado</label>
+                <textarea id="motivo" rows="2" placeholder="Ex: Paciente com suspeita de AVC necessita de TC urgente." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-enviar">Disparar Solicitação para os Maqueiros</button>
+        </form>
+    </div>
+
+    <div class="secao">
+        <h2>📋 Fila Ativa de Pedidos</h2>
+        <div id="fila"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://wcccerxilknnbybmjvbp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjY2NlcnhpbGtubmJ5Ym1qdmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYyODEsImV4cCI6MjA5NTM4MjI4MX0.42BLv5Dk1N-OMxv0_33LfX9MYXfOOD6h_mQS64M3gv0';
+
+        const MAQUEIRO_SIMULADO_ID = '99999999-9999-9999-9999-999999999999'; 
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const filaElemento = document.getElementById('fila');
+        const formSolicitacao = document.getElementById('form-solicitacao');
+
+        // 🟢 EVENTO: Enviar o formulário para o Banco de Dados
+        formSolicitacao.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Impede a página de recarregar
+
+            const origem = document.getElementById('origem').value;
+            const destino = document.getElementById('destino').value;
+            const prioridade = document.getElementById('prioridade').value;
+            const motivo = document.getElementById('motivo').value;
+
+            // O 'prazo_limite' vai como a hora atual, pois a TRIGGER que criamos no banco 
+            // vai sobrescrever e calcular o tempo correto baseado na prioridade.
+            const { error } = await supabaseClient
+                .from('pedidos_maca')
+                .insert([
+                    { origem, destino, prioridade, motivo, prazo_limite: new Date().toISOString() }
+                ]);
+
+            if (error) {
+                alert(`Erro ao criar solicitação: ${error.message}`);
+            } else {
+                formSolicitacao.reset(); // Limpa os campos do formulário
+                console.log("Solicitação criada com sucesso!");
+            }
+        });
+
+        // Ações do Maqueiro
+        async function aceitarCorrida(pedidoId) {
+            await supabaseClient.rpc('aceitar_pedido', { pedido_id: pedidoId, maqueiro_id: MAQUEIRO_SIMULADO_ID });
+        }
+
+        async function finalizarEntregaDireto(pedidoId) {
+            let justificativa = null;
+            const { error } = await supabaseClient.rpc('concluir_pedido_direto', { 
+                pedido_id: pedidoId, maqueiro_id: MAQUEIRO_SIMULADO_ID, justificativa: justificativa
+            });
+
+            if (error && error.message.includes('PRAZO_ESTOURADO')) {
+                justificativa = prompt("⚠️ O prazo acabou! Digite o motivo do atraso para fechar o chamado:");
+                if (justificativa) {
+                    await supabaseClient.rpc('concluir_pedido_direto', { 
+                        pedido_id: pedidoId, maqueiro_id: MAQUEIRO_SIMULADO_ID, justificativa: justificativa
+                    });
+                } else {
+                    alert("A justificativa é obrigatória para encerrar chamados atrasados.");
+                }
+            }
+        }
+
+        // Renderização dos cards na tela
+        function renderizarOuAtualizarCard(pedido) {
+            if (!pedido || !pedido.id) return;
+
+            if (pedido.status === 'CONCLUIDO') {
+                const cardExistente = document.getElementById(`pedido-${pedido.id}`);
+                if (cardExistente) cardExistente.remove();
+                return;
+            }
+
+            let card = document.getElementById(`pedido-${pedido.id}`);
+            if (!card) {
+                card = document.createElement('div');
+                card.id = `pedido-${pedido.id}`;
+                filaElemento.insertBefore(card, filaElemento.firstChild);
+            }
+
+            card.className = `card ${pedido.prioridade}`;
+            const prazo = pedido.prazo_limite ? new Date(pedido.prazo_limite).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
+
+            let botoesHTML = '';
+            if (pedido.status === 'PENDENTE') {
+                botoesHTML = `<button class="btn-acao btn-azul" onclick="aceitarCorrida('${pedido.id}')">Aceitar Pedido</button>`;
+            } else if (pedido.status === 'A_CAMINHO') {
+                botoesHTML = `<button class="btn-acao btn-verde" onclick="finalizarEntregaDireto('${pedido.id}')">Concluir Entrega</button>`;
+            }
+
+            card.innerHTML = `
+                <strong>📍 Origem:</strong> ${pedido.origem} | <strong>🏁 Destino:</strong> ${pedido.destino}<br>
+                <strong>⚠️ Prioridade:</strong> ${pedido.prioridade} | <strong>⏱️ Limite:</strong> ${prazo}<br>
+                <strong>📝 Motivo:</strong> ${pedido.motivo}<br>
+                <span class="status-badge">Status: ${pedido.status}</span><br>
+                ${botoesHTML}
+            `;
+        }
+
+        // Carga inicial
+        async function carregarPedidosAtivos() {
+            const { data } = await supabaseClient.from('pedidos_maca').select('*').neq('status', 'CONCLUIDO').order('criado_em', { ascending: true });
+            if (data) data.forEach(pedido => renderizarOuAtualizarCard(pedido));
+        }
+
+        // Escuta em tempo real unificada
+        supabaseClient
+            .channel('fila_hospitalar')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_maca' }, payload => {
+                if (payload.eventType === 'DELETE') {
+                    const card = document.getElementById(`pedido-${payload.old.id}`);
+                    if (card) card.remove();
+                } else {
+                    renderizarOuAtualizarCard(payload.new);
+                }
+            })
+            .subscribe();
+
+        carregarPedidosAtivos();
+    </script>
+</body>
+</html>

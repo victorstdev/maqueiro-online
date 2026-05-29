@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Maca - Médicos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+            <div class="bg-emerald-50 text-emerald-600 p-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">Nova Solicitação de Maca</h1>
+                <p class="text-sm text-slate-500">Posto de Enfermagem</p>
+            </div>
+        </div>
+
+        <form id="form-solicitacao" class="space-y-5">
+            <div class="flex flex-col gap-1.5">
+                <label for="origem" class="text-sm font-semibold text-slate-700">Origem</label>
+                <select id="origem" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-emerald-500" required>
+                    <option value="" disabled selected>Selecione a origem</option>
+                    <option value="Pronto Socorro - Leito 01">Pronto Socorro - Leito 01</option>
+                    <option value="Pronto Socorro - Leito 02">Pronto Socorro - Leito 02</option>
+                    <option value="UTI Adulto - Box 05">UTI Adulto - Box 05</option>
+                    <option value="Ala A - Quarto 102">Ala A - Quarto 102</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="destino" class="text-sm font-semibold text-slate-700">Destino</label>
+                <select id="destino" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-emerald-500" required>
+                    <option value="" disabled selected>Selecione o destino</option>
+                    <option value="Centro Cirúrgico - Sala 03">Centro Cirúrgico - Sala 03</option>
+                    <option value="Radiologia (Tomografia)">Radiologia (Tomografia)</option>
+                    <option value="Radiologia (Raio-X)">Radiologia (Raio-X)</option>
+                    <option value="Alta Hospitalar">Alta Hospitalar</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold text-slate-700">Prioridade</label>
+                <input type="hidden" id="prioridade" value="BAIXA" required>
+                <div class="grid grid-cols-3 gap-3">
+                    <button type="button" id="btn-baixa" class="p-3 border-2 border-blue-500 bg-blue-50 text-blue-700 rounded-xl font-bold text-center">🟢 BAIXA</button>
+                    <button type="button" id="btn-media" class="p-3 border-2 border-slate-200 bg-slate-50 text-slate-600 rounded-xl font-bold text-center">🟡 MÉDIA</button>
+                    <button type="button" id="btn-alta" class="p-3 border-2 border-slate-200 bg-slate-50 text-slate-600 rounded-xl font-bold text-center">🔴 ALTA</button>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="motivo" class="text-sm font-semibold text-slate-700">Motivo / Observação</label>
+                <textarea id="motivo" rows="2" placeholder="Ex: Paciente em isolamento." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-emerald-500" required></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition-colors">
+                Chamar Maqueiro Agora
+            </button>
+        </form>
+    </div>
+
+    <script src="solicitante.js"></script>
+</body>
+</html>
