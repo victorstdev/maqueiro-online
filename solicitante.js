@@ -2,6 +2,31 @@ const SUPABASE_URL = 'https://wcccerxilknnbybmjvbp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjY2NlcnhpbGtubmJ5Ym1qdmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYyODEsImV4cCI6MjA5NTM4MjI4MX0.42BLv5Dk1N-OMxv0_33LfX9MYXfOOD6h_mQS64M3gv0';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+async function verificarAutenticacao() {
+    const {data:{user}, error} = await supabaseClient.auth.getUser();
+    if (error || !user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    console.log("Usuário autenticado:", user.email);
+    const {data: perfil, error: perfilError} = await supabaseClient
+        .from('perfis_usuarios')
+        .select('cargo')
+        .eq('id', user.id)
+        .single();
+    if (perfilError || !perfil) {
+        window.location.href = 'index.html';
+        return;
+    }
+    if (perfil.cargo === 'MAQUEIRO') {
+        alert("⚠️ Acesso restrito: Maqueiros devem usar o aplicativo específico para maqueiros.");
+        window.location.href = 'index.html';
+        return;
+    }
+}
+
+verificarAutenticacao();
+
 const prioridadeInput = document.getElementById('prioridade');
 const btnBaixa = document.getElementById('btn-baixa');
 const btnMedia = document.getElementById('btn-media');

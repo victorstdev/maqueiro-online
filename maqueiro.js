@@ -1,25 +1,53 @@
 const SUPABASE_URL = 'https://wcccerxilknnbybmjvbp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjY2NlcnhpbGtubmJ5Ym1qdmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYyODEsImV4cCI6MjA5NTM4MjI4MX0.42BLv5Dk1N-OMxv0_33LfX9MYXfOOD6h_mQS64M3gv0';
-
-const MAQUEIRO_SIMULADO_ID = '99999999-9999-9999-9999-999999999999'; 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const filaElemento = document.getElementById('fila');
 
+let maqueiro_id = null;
+let maqueiro_nome = null;
+
+async function verificarAutenticacao() {
+    const {data:{user}, error} = await supabaseClient.auth.getUser();
+    if (error || !user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    console.log("Usuário autenticado:", user.email);
+    const {data: perfil, error: perfilError} = await supabaseClient
+        .from('perfis_usuarios')
+        .select('cargo')
+        .eq('id', user.id)
+        .single();
+    if (perfilError || !perfil) {
+        window.location.href = 'index.html';
+        return;
+    }
+    if (perfil.cargo === 'SOLICITANTE') {
+        alert("⚠️ Acesso restrito: Solicitantes devem usar o aplicativo específico para solicitantes.");
+        window.location.href = 'solicitante.html';
+        return;
+    }
+    maqueiro_id = user.id;
+    maqueiro_nome = user.email;
+    carregarPedidosAtivos();
+}
+
 async function aceitarCorrida(pedidoId) {
-    await supabaseClient.rpc('aceitar_pedido', { pedido_id: pedidoId, maqueiro_id: MAQUEIRO_SIMULADO_ID });
+    if (!maqueiro_id) return;
+    await supabaseClient.rpc('aceitar_pedido', { pedido_id: pedidoId, maqueiro_id: maqueiro_id });
 }
 
 async function finalizarEntregaDireto(pedidoId) {
     let justificativa = null;
     const { error } = await supabaseClient.rpc('concluir_pedido_direto', { 
-        pedido_id: pedidoId, maqueiro_id: MAQUEIRO_SIMULADO_ID, justificativa: justificativa
+        pedido_id: pedidoId, maqueiro_id: maqueiro_id, justificativa: justificativa
     });
 
     if (error && error.message.includes('PRAZO_ESTOURADO')) {
         justificativa = prompt("⚠️ O prazo acabou! Digite o motivo do atraso para conseguir fechar o chamado:");
         if (justificativa) {
             await supabaseClient.rpc('concluir_pedido_direto', { 
-                pedido_id: pedidoId, maqueiro_id: MAQUEIRO_SIMULADO_ID, justificativa: justificativa
+                pedido_id: pedidoId, maqueiro_id: maqueiro_id, justificativa: justificativa
             });
         } else {
             alert("A justificativa é obrigatória para encerrar chamados atrasados.");
@@ -84,4 +112,6 @@ supabaseClient
     })
     .subscribe();
 
-carregarPedidosAtivos();
+verificarAutenticacao();
+const maqueiro_nome_span = document.getElementById('maqueiro');
+maqueiro_nome_span.textContent = maqueiro_nome;
