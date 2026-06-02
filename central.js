@@ -12,6 +12,30 @@ const txtPendentes = document.getElementById('qtd-pendentes');
 const txtAndamento = document.getElementById('qtd-andamento');
 const txtJustificativas = document.getElementById('qtd-justificativas');
 
+async function verificarAutenticacao() {
+    const {data:{user}, error} = await supabaseClient.auth.getUser();
+    if (error || !user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    console.log("Usuário autenticado:", user.email);
+    const {data: perfil, error: perfilError} = await supabaseClient
+        .from('perfis_usuarios')
+        .select('cargo')
+        .eq('id', user.id)
+        .single();
+    if (perfilError || !perfil) {
+        window.location.href = 'index.html';
+        return;
+    }
+    if (perfil.cargo !== 'ADMIN') {
+        alert("⚠️ Acesso restrito: Solicitantes devem usar o aplicativo específico para solicitantes.");
+        window.location.href = 'index.html';
+        return;
+    }
+    iniciarPainel();
+}
+
 // Função para renderizar os cards nas colunas corretas (Visual Dark focado na Central)
 function renderizarCardPainel(pedido) {
     // Remove o card antigo de onde quer que ele esteja
@@ -89,6 +113,18 @@ async function iniciarPainel() {
     }
 }
 
+// Função de logout
+async function logout() {
+    await supabaseClient.auth.signOut();
+    window.location.href = '/index.html';
+}
+
+// Conectar logout button ao evento
+const btnLogout = document.getElementById('btn-logout');
+if (btnLogout) {
+    btnLogout.addEventListener('click', logout);
+}
+
 // Canais de escuta em tempo real (Escuta tanto os pedidos quanto as justificativas)
 supabaseClient.channel('painel_central')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_maca' }, payload => {
@@ -106,4 +142,4 @@ supabaseClient.channel('painel_central')
     })
     .subscribe();
 
-iniciarPainel();
+verificarAutenticacao();

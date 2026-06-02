@@ -1,3 +1,5 @@
+// 🌟 CONFIGURAÇÃO DO WEB PUSH
+const CHAVE_PUBLICA_VAPID = 'BEZf-0jWrqbmH1PtUy5fVeAsONyvnIiVIU0gQFWCkxW0ePRSIkPT8pAwN2f18MW2wGN7A-XGTF0ZX_MdZfgNo1E';
 const SUPABASE_URL = 'https://wcccerxilknnbybmjvbp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjY2NlcnhpbGtubmJ5Ym1qdmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYyODEsImV4cCI6MjA5NTM4MjI4MX0.42BLv5Dk1N-OMxv0_33LfX9MYXfOOD6h_mQS64M3gv0';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -6,6 +8,72 @@ const filaElemento = document.getElementById('fila');
 let maqueiro_id = null;
 let maqueiro_nome = null;
 const countdownIntervals = {};
+
+// Função para converter a chave VAPID para o formato que o navegador exige
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Inicializa a instalação do Service Worker e pede autorização de Push
+async function inicializarNotificacoesPush() {
+    // Verifica se o navegador do celular suporta notificações push
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+            console.log('Registrando Service Worker...');
+            const registro = await navigator.serviceWorker.register('sw.js');
+            console.log('Service Worker registrado com sucesso:', registro);
+
+            // Pede permissão nativa para o usuário
+            const permissao = await Notification.requestPermission();
+            if (permissao !== 'granted') {
+                console.warn('O maqueiro recusou as notificações push.');
+                return;
+            }
+
+            // Se aceitou, gera a inscrição do dispositivo junto ao servidor do Google/Apple
+            const opcoesInscricao = {
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(CHAVE_PUBLICA_VAPID)
+            };
+            
+            const inscricao = await registro.pushManager.subscribe(opcoesInscricao);
+            console.log('Dispositivo inscrito com sucesso no Push Server:', inscricao);
+
+            // Extrai as chaves criptográficas geradas pelo celular
+            const chaves = JSON.parse(JSON.stringify(inscricao));
+            
+            const dadosSalvar = {
+                maqueiro_id: idMaqueiroLogado,
+                endpoint: chaves.endpoint,
+                p256dh: chaves.keys.p256dh,
+                auth_token: chaves.keys.auth
+            };
+
+            // Envia e salva as chaves na nossa tabela do Supabase
+            const { error } = await supabaseClient
+                .from('inscricoes_push')
+                .upsert([dadosSalvar], { onConflict: 'maqueiro_id,endpoint' });
+
+            if (error) {
+                console.error('Erro ao salvar chaves de push no Supabase:', error);
+            } else {
+                console.log('🎉 Celular cadastrado com sucesso para receber notificações em segundo plano!');
+            }
+
+        } catch (erro) {
+            console.error('Falha ao configurar o Web Push:', erro);
+        }
+    } else {
+        console.warn('Este navegador/celular não suporta Notificações Push nativas.');
+    }
+}
 
 function formatarTempoRestante(prazoLimite) {
     if (!prazoLimite) return '--:--';
@@ -85,6 +153,7 @@ async function verificarAutenticacao() {
     if (maqueiroSpan) {
         maqueiroSpan.textContent = maqueiro_nome;
     }
+    inicializarNotificacoesPush();
     carregarPedidosAtivos();
 }
 

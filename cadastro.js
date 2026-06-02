@@ -10,7 +10,6 @@ function mostrarNotificacao(mensagem, tipo = 'sucesso') {
     const corBackground = tipo === 'sucesso' ? 'bg-emerald-500' : 'bg-rose-500';
     
     toast.className = `${corBackground} text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold transition-all duration-300 transform translate-y-5 opacity-0`;
-    toast.textContent = mensaje; // Correção interna de digitação se necessário
     toast.textContent = mensagem;
 
     containerNotificacao.appendChild(toast);
