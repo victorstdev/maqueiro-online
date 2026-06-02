@@ -5,6 +5,58 @@ const filaElemento = document.getElementById('fila');
 
 let maqueiro_id = null;
 let maqueiro_nome = null;
+const countdownIntervals = {};
+
+function formatarTempoRestante(prazoLimite) {
+    if (!prazoLimite) return '--:--';
+    const now = new Date();
+    const prazo = new Date(prazoLimite);
+    const diffMs = prazo - now;
+    if (diffMs <= 0) return '00:00';
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+}
+
+function atualizarContador(pedidoId, prazoLimite) {
+    const countdownSpan = document.getElementById(`countdown-${pedidoId}`);
+    if (!countdownSpan) return;
+    const novoTexto = formatarTempoRestante(prazoLimite);
+    countdownSpan.textContent = novoTexto;
+    countdownSpan.style.transition = 'transform 0.2s ease';
+    countdownSpan.style.transform = 'scale(1.05)';
+    setTimeout(() => {
+        countdownSpan.style.transform = 'scale(1)';
+    }, 180);
+    if (novoTexto === '00:00') {
+        countdownSpan.style.color = '#dc2626';
+    }
+}
+
+function iniciarContador(pedidoId, prazoLimite) {
+    if (countdownIntervals[pedidoId]) return;
+    const prazo = new Date(prazoLimite);
+    if (isNaN(prazo.getTime())) return;
+    atualizarContador(pedidoId, prazoLimite);
+    countdownIntervals[pedidoId] = setInterval(() => {
+        const agora = new Date();
+        if (prazo - agora <= 0) {
+            atualizarContador(pedidoId, prazoLimite);
+            clearInterval(countdownIntervals[pedidoId]);
+            delete countdownIntervals[pedidoId];
+            return;
+        }
+        atualizarContador(pedidoId, prazoLimite);
+    }, 1000);
+}
+
+function limparContador(pedidoId) {
+    if (countdownIntervals[pedidoId]) {
+        clearInterval(countdownIntervals[pedidoId]);
+        delete countdownIntervals[pedidoId];
+    }
+}
 
 async function verificarAutenticacao() {
     const {data:{user}, error} = await supabaseClient.auth.getUser();
@@ -29,6 +81,10 @@ async function verificarAutenticacao() {
     }
     maqueiro_id = user.id;
     maqueiro_nome = user.email;
+    const maqueiroSpan = document.getElementById('maqueiro');
+    if (maqueiroSpan) {
+        maqueiroSpan.textContent = maqueiro_nome;
+    }
     carregarPedidosAtivos();
 }
 
@@ -61,6 +117,7 @@ function renderizarOuAtualizarCard(pedido) {
     if (pedido.status === 'CONCLUIDO') {
         const cardExistente = document.getElementById(`pedido-${pedido.id}`);
         if (cardExistente) cardExistente.remove();
+        limparContador(pedido.id);
         return;
     }
 
@@ -73,6 +130,11 @@ function renderizarOuAtualizarCard(pedido) {
 
     card.className = `card-maca prioridade-${pedido.prioridade}`;
     const prazo = pedido.prazo_limite ? new Date(pedido.prazo_limite).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
+    const countdownHTML = pedido.prazo_limite ? `
+            <p class="text-sm font-semibold text-slate-700 mt-2">
+                <span id="countdown-${pedido.id}" style="display:inline-block; min-width:56px; transition: transform 0.2s ease;">${formatarTempoRestante(pedido.prazo_limite)}</span>
+            </p>
+        ` : '';
 
     let botaoHTML = '';
     if (pedido.status === 'PENDENTE') {
@@ -90,9 +152,16 @@ function renderizarOuAtualizarCard(pedido) {
             <p><span class="font-bold text-slate-400 text-xs uppercase block">Origem</span> <span class="text-base font-semibold">${pedido.origem}</span></p>
             <p><span class="font-bold text-slate-400 text-xs uppercase block">Destino</span> <span class="text-base font-semibold">${pedido.destino}</span></p>
             <p class="text-sm text-slate-600 pt-1 border-t border-slate-100 mt-2"><strong>Motivo:</strong> ${pedido.motivo}</p>
+            ${countdownHTML}
         </div>
         ${botaoHTML}
     `;
+
+    if (pedido.prazo_limite) {
+        iniciarContador(pedido.id, pedido.prazo_limite);
+    } else {
+        limparContador(pedido.id);
+    }
 }
 
 async function carregarPedidosAtivos() {
@@ -113,5 +182,3 @@ supabaseClient
     .subscribe();
 
 verificarAutenticacao();
-const maqueiro_nome_span = document.getElementById('maqueiro');
-maqueiro_nome_span.textContent = maqueiro_nome;
