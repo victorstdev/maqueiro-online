@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Hospital São Matheus</title>
+    <title>Acesso - Sistema de Macas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body class="bg-slate-900 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Container dos Toasts de Notificação da Página -->
+    <div id="container-notificacao" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
 
     <div class="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
         <div class="text-center mb-6">
@@ -21,27 +22,19 @@
         <form id="form-login" class="space-y-4">
             <div class="flex flex-col gap-1">
                 <label for="email" class="text-sm font-semibold text-slate-700">E-mail</label>
-                <input type="email" id="email"
-                    class="p-3 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500"
-                    required>
+                <input type="email" id="email" class="p-3 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500" required>
             </div>
 
             <div class="flex flex-col gap-1">
                 <label for="senha" class="text-sm font-semibold text-slate-700">Senha</label>
-                <input type="password" id="senha"
-                    class="p-3 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500"
-                    required>
+                <input type="password" id="senha" class="p-3 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500" required>
             </div>
 
-            <div id="container-notificacao" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
-
-            <button type="submit"
-                class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-md">
+            <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-md">
                 Entrar no Sistema
             </button>
-
-            <a href="cadastro.html"
-                class="block text-center w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-xl transition-colors text-sm">
+            
+            <a href="cadastro.html" class="block text-center w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-xl transition-colors text-sm">
                 Primeiro Acesso? Cadastre-se
             </a>
         </form>
@@ -49,5 +42,4 @@
 
     <script src="index.js"></script>
 </body>
-
 </html>

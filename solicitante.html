@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitar Maca - Médicos</title>
+    <title>Solicitar Maca</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="estilo-hospital.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 min-h-screen p-4 md:p-8">
@@ -19,7 +19,7 @@
             </div>
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Nova Solicitação de Maca</h1>
-                <p class="text-sm text-slate-500">Posto de Enfermagem</p>
+                <!-- <p class="text-sm text-slate-500">Posto de Enfermagem / Médicos</p> -->
             </div>
         </div>
 
@@ -50,15 +50,21 @@
                 <label class="text-sm font-semibold text-slate-700">Prioridade</label>
                 <input type="hidden" id="prioridade" value="BAIXA" required>
                 <div class="grid grid-cols-3 gap-3">
-                    <button type="button" id="btn-baixa" class="p-3 border-2 border-blue-500 bg-blue-50 text-blue-700 rounded-xl font-bold text-center">🟢 BAIXA</button>
-                    <button type="button" id="btn-media" class="p-3 border-2 border-slate-200 bg-slate-50 text-slate-600 rounded-xl font-bold text-center">🟡 MÉDIA</button>
-                    <button type="button" id="btn-alta" class="p-3 border-2 border-slate-200 bg-slate-50 text-slate-600 rounded-xl font-bold text-center">🔴 ALTA</button>
+                    <button type="button" id="btn-baixa" class="p-3 border-2 border-blue-500 bg-blue-50 text-blue-700 rounded-xl font-bold text-center">
+                        🟢 BAIXA
+                    </button>
+                    <button type="button" id="btn-media" class="p-3 border-2 border-slate-200 bg-slate-50 text-slate-600 rounded-xl font-bold text-center">
+                        🟡 MÉDIA
+                    </button>
+                    <button type="button" id="btn-alta" class="p-3 border-2 border-slate-200 bg-slate-50 text-slate-600 rounded-xl font-bold text-center">
+                        🔴 ALTA
+                    </button>
                 </div>
             </div>
 
             <div class="flex flex-col gap-1.5">
                 <label for="motivo" class="text-sm font-semibold text-slate-700">Motivo / Observação</label>
-                <textarea id="motivo" rows="2" placeholder="Ex: Paciente em isolamento." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-emerald-500" required></textarea>
+                <textarea id="motivo" rows="2" placeholder="Ex: Paciente com dreno de tórax." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-emerald-500" required></textarea>
             </div>
 
             <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition-colors">

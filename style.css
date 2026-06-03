@@ -1,11 +1,11 @@
-/* Customizações adicionais sobre o Tailwind */
+/* Customizações e utilitários visuais para as telas */
 .card-maca {
-    @apply bg-white p-5 rounded-2xl shadow-sm border-l-8 transition-all;
+    @apply bg-white p-5 rounded-2xl shadow-sm border-l-8 transition-all duration-200;
 }
 
-/* Cores das bordas de prioridade */
+/* Cores das bordas com base na criticidade */
 .prioridade-BAIXA {
-    border-left-color: #0ea5e9; /* Azul */
+    border-left-color: #0ea5e9; /* Azul Sky */
 }
 .prioridade-MEDIA {
     border-left-color: #f59e0b; /* Âmbar */
@@ -16,6 +16,6 @@
 }
 
 @keyframes pulse-urgente {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.85; }
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.99); opacity: 0.9; }
 }

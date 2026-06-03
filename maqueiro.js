@@ -1,178 +1,83 @@
-// 🌟 CONFIGURAÇÃO DO WEB PUSH
-const CHAVE_PUBLICA_VAPID = 'BEZf-0jWrqbmH1PtUy5fVeAsONyvnIiVIU0gQFWCkxW0ePRSIkPT8pAwN2f18MW2wGN7A-XGTF0ZX_MdZfgNo1E';
 const SUPABASE_URL = 'https://wcccerxilknnbybmjvbp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjY2NlcnhpbGtubmJ5Ym1qdmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYyODEsImV4cCI6MjA5NTM4MjI4MX0.42BLv5Dk1N-OMxv0_33LfX9MYXfOOD6h_mQS64M3gv0';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const filaElemento = document.getElementById('fila');
+let idMaqueiroLogado = null;
+let nomeMaqueiroLogado = null;
+const CHAVE_PUBLICA_VAPID = 'BEZf-0jWrqbmH1PtUy5fVeAsONyvnIiVIU0gQFWCkxW0ePRSIkPT8pAwN2f18MW2wGN7A-XGTF0ZX_MdZfgNo1E';
 
-let maqueiro_id = null;
-let maqueiro_nome = null;
-const countdownIntervals = {};
-
-// Função para converter a chave VAPID para o formato que o navegador exige
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
     const rawData = window.atob(base64);
     const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
+    for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
     return outputArray;
 }
 
-// Inicializa a instalação do Service Worker e pede autorização de Push
+// Configuração do Service Worker e das Notificações Push em Segundo Plano
 async function inicializarNotificacoesPush() {
-    // Verifica se o navegador do celular suporta notificações push
     if ('serviceWorker' in navigator && 'PushManager' in window) {
         try {
-            console.log('Registrando Service Worker...');
             const registro = await navigator.serviceWorker.register('sw.js');
-            console.log('Service Worker registrado com sucesso:', registro);
-
-            // Pede permissão nativa para o usuário
             const permissao = await Notification.requestPermission();
-            if (permissao !== 'granted') {
-                console.warn('O maqueiro recusou as notificações push.');
-                return;
-            }
+            if (permissao !== 'granted') return;
 
-            // Se aceitou, gera a inscrição do dispositivo junto ao servidor do Google/Apple
-            const opcoesInscricao = {
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(CHAVE_PUBLICA_VAPID)
-            };
-            
+            const opcoesInscricao = { userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(CHAVE_PUBLICA_VAPID) };
             const inscricao = await registro.pushManager.subscribe(opcoesInscricao);
-            console.log('Dispositivo inscrito com sucesso no Push Server:', inscricao);
-
-            // Extrai as chaves criptográficas geradas pelo celular
             const chaves = JSON.parse(JSON.stringify(inscricao));
             
             const dadosSalvar = {
-                maqueiro_id: idMaqueiroLogado,
-                endpoint: chaves.endpoint,
-                p256dh: chaves.keys.p256dh,
-                auth_token: chaves.keys.auth
+                maqueiro_id: idMaqueiroLogado, nome: nomeMaqueiroLogado, endpoint: chaves.endpoint,
+                p256dh: chaves.keys.p256dh, auth_token: chaves.keys.auth
             };
 
-            // Envia e salva as chaves na nossa tabela do Supabase
-            const { error } = await supabaseClient
-                .from('inscricoes_push')
-                .upsert([dadosSalvar], { onConflict: 'maqueiro_id,endpoint' });
-
-            if (error) {
-                console.error('Erro ao salvar chaves de push no Supabase:', error);
-            } else {
-                console.log('🎉 Celular cadastrado com sucesso para receber notificações em segundo plano!');
-            }
-
-        } catch (erro) {
-            console.error('Falha ao configurar o Web Push:', erro);
-        }
-    } else {
-        console.warn('Este navegador/celular não suporta Notificações Push nativas.');
+            await supabaseClient.from('inscricoes_push').upsert([dadosSalvar], { onConflict: 'maqueiro_id,endpoint' });
+            console.log('🎉 Push ativado no bolso do maqueiro!');
+        } catch (err) { console.error('Erro ao registrar Web Push:', err); }
     }
 }
 
-function formatarTempoRestante(prazoLimite) {
-    if (!prazoLimite) return '--:--';
-    const now = new Date();
-    const prazo = new Date(prazoLimite);
-    const diffMs = prazo - now;
-    if (diffMs <= 0) return '00:00';
-    const totalSeconds = Math.floor(diffMs / 1000);
-    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-    const seconds = String(totalSeconds % 60).padStart(2, '0');
-    return `${minutes}:${seconds}`;
-}
+async function verificarSessao() {
+    const { data: { user }, error: errorAuth } = await supabaseClient.auth.getUser();
+    if (errorAuth || !user) { window.location.href = 'index.html'; return; }
 
-function atualizarContador(pedidoId, prazoLimite) {
-    const countdownSpan = document.getElementById(`countdown-${pedidoId}`);
-    if (!countdownSpan) return;
-    const novoTexto = formatarTempoRestante(prazoLimite);
-    countdownSpan.textContent = novoTexto;
-    countdownSpan.style.transition = 'transform 0.2s ease';
-    countdownSpan.style.transform = 'scale(1.05)';
-    setTimeout(() => {
-        countdownSpan.style.transform = 'scale(1)';
-    }, 180);
-    if (novoTexto === '00:00') {
-        countdownSpan.style.color = '#dc2626';
-    }
-}
-
-function iniciarContador(pedidoId, prazoLimite) {
-    if (countdownIntervals[pedidoId]) return;
-    const prazo = new Date(prazoLimite);
-    if (isNaN(prazo.getTime())) return;
-    atualizarContador(pedidoId, prazoLimite);
-    countdownIntervals[pedidoId] = setInterval(() => {
-        const agora = new Date();
-        if (prazo - agora <= 0) {
-            atualizarContador(pedidoId, prazoLimite);
-            clearInterval(countdownIntervals[pedidoId]);
-            delete countdownIntervals[pedidoId];
-            return;
-        }
-        atualizarContador(pedidoId, prazoLimite);
-    }, 1000);
-}
-
-function limparContador(pedidoId) {
-    if (countdownIntervals[pedidoId]) {
-        clearInterval(countdownIntervals[pedidoId]);
-        delete countdownIntervals[pedidoId];
-    }
-}
-
-async function verificarAutenticacao() {
-    const {data:{user}, error} = await supabaseClient.auth.getUser();
-    if (error || !user) {
-        window.location.href = 'index.html';
-        return;
-    }
-    console.log("Usuário autenticado:", user.email);
-    const {data: perfil, error: perfilError} = await supabaseClient
-        .from('perfis_usuarios')
-        .select('cargo')
-        .eq('id', user.id)
-        .single();
-    if (perfilError || !perfil) {
-        window.location.href = 'index.html';
-        return;
-    }
-    if (perfil.cargo === 'SOLICITANTE') {
-        alert("⚠️ Acesso restrito: Solicitantes devem usar o aplicativo específico para solicitantes.");
+    const { data: perfil } = await supabaseClient.from('perfis_usuarios').select('cargo').eq('id', user.id).single();
+    if (perfil && perfil.cargo === 'SOLICITANTE') {
+        alert("Acesso Negado: Esta tela é exclusiva para maqueiros.");
         window.location.href = 'solicitante.html';
         return;
     }
-    maqueiro_id = user.id;
-    maqueiro_nome = user.email;
-    const maqueiroSpan = document.getElementById('maqueiro');
-    if (maqueiroSpan) {
-        maqueiroSpan.textContent = maqueiro_nome;
+
+    idMaqueiroLogado = user.id;
+    nomeMaqueiroLogado = user.email; // Ou obtenha do perfil se disponível
+    const maqueiroElemento = document.getElementById('maqueiro');
+    if (maqueiroElemento) {
+        maqueiroElemento.textContent = nomeMaqueiroLogado;
     }
     inicializarNotificacoesPush();
     carregarPedidosAtivos();
 }
 
 async function aceitarCorrida(pedidoId) {
-    if (!maqueiro_id) return;
-    await supabaseClient.rpc('aceitar_pedido', { pedido_id: pedidoId, maqueiro_id: maqueiro_id });
+    if (!idMaqueiroLogado) return;
+    await supabaseClient.rpc('aceitar_pedido', { pedido_id: pedidoId, maqueiro_id: idMaqueiroLogado });
 }
 
 async function finalizarEntregaDireto(pedidoId) {
+    if (!idMaqueiroLogado) return;
     let justificativa = null;
+    
     const { error } = await supabaseClient.rpc('concluir_pedido_direto', { 
-        pedido_id: pedidoId, maqueiro_id: maqueiro_id, justificativa: justificativa
+        pedido_id: pedidoId, maqueiro_id: idMaqueiroLogado, justificativa: justificativa
     });
 
     if (error && error.message.includes('PRAZO_ESTOURADO')) {
-        justificativa = prompt("⚠️ O prazo acabou! Digite o motivo do atraso para conseguir fechar o chamado:");
+        justificativa = prompt("⚠️ O prazo acabou! Digite o motivo do atraso para fechar o chamado:");
         if (justificativa) {
             await supabaseClient.rpc('concluir_pedido_direto', { 
-                pedido_id: pedidoId, maqueiro_id: maqueiro_id, justificativa: justificativa
+                pedido_id: pedidoId, maqueiro_id: idMaqueiroLogado, justificativa: justificativa
             });
         } else {
             alert("A justificativa é obrigatória para encerrar chamados atrasados.");
@@ -182,11 +87,9 @@ async function finalizarEntregaDireto(pedidoId) {
 
 function renderizarOuAtualizarCard(pedido) {
     if (!pedido || !pedido.id) return;
-
     if (pedido.status === 'CONCLUIDO') {
         const cardExistente = document.getElementById(`pedido-${pedido.id}`);
         if (cardExistente) cardExistente.remove();
-        limparContador(pedido.id);
         return;
     }
 
@@ -199,11 +102,6 @@ function renderizarOuAtualizarCard(pedido) {
 
     card.className = `card-maca prioridade-${pedido.prioridade}`;
     const prazo = pedido.prazo_limite ? new Date(pedido.prazo_limite).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
-    const countdownHTML = pedido.prazo_limite ? `
-            <p class="text-sm font-semibold text-slate-700 mt-2">
-                <span id="countdown-${pedido.id}" style="display:inline-block; min-width:56px; transition: transform 0.2s ease;">${formatarTempoRestante(pedido.prazo_limite)}</span>
-            </p>
-        ` : '';
 
     let botaoHTML = '';
     if (pedido.status === 'PENDENTE') {
@@ -213,24 +111,17 @@ function renderizarOuAtualizarCard(pedido) {
     }
 
     card.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-bold tracking-wide uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">${pedido.status}</span>
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">${pedido.status}</span>
             <span class="text-sm font-bold text-slate-500">⏱️ Limite: ${prazo}</span>
         </div>
         <div class="text-slate-800 space-y-1">
-            <p><span class="font-bold text-slate-400 text-xs uppercase block">Origem</span> <span class="text-base font-semibold">${pedido.origem}</span></p>
-            <p><span class="font-bold text-slate-400 text-xs uppercase block">Destino</span> <span class="text-base font-semibold">${pedido.destino}</span></p>
+            <p><span class="font-bold text-slate-400 text-xs uppercase block">Origem</span><span class="text-base font-semibold">${pedido.origem}</span></p>
+            <p><span class="font-bold text-slate-400 text-xs uppercase block">Destino</span><span class="text-base font-semibold">${pedido.destino}</span></p>
             <p class="text-sm text-slate-600 pt-1 border-t border-slate-100 mt-2"><strong>Motivo:</strong> ${pedido.motivo}</p>
-            ${countdownHTML}
         </div>
         ${botaoHTML}
     `;
-
-    if (pedido.prazo_limite) {
-        iniciarContador(pedido.id, pedido.prazo_limite);
-    } else {
-        limparContador(pedido.id);
-    }
 }
 
 async function carregarPedidosAtivos() {
@@ -238,16 +129,19 @@ async function carregarPedidosAtivos() {
     if (data) data.forEach(pedido => renderizarOuAtualizarCard(pedido));
 }
 
-supabaseClient
-    .channel('fila_hospitalar')
+supabaseClient.channel('fila_hospitalar')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_maca' }, payload => {
         if (payload.eventType === 'DELETE') {
             const card = document.getElementById(`pedido-${payload.old.id}`);
             if (card) card.remove();
         } else {
             renderizarOuAtualizarCard(payload.new);
+            if (payload.eventType === 'INSERT' && payload.new.status === 'PENDENTE') {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({ type: 'NOVO_CHAMADO', pedido: payload.new });
+                }
+            }
         }
-    })
-    .subscribe();
+    }).subscribe();
 
-verificarAutenticacao();
+verificarSessao();

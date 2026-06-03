@@ -1,108 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel da Central - Gestão de Macas</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="estilo-hospital.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  </head>
-  <body class="bg-slate-900 min-h-screen text-slate-100 p-6">
-    <div
-      class="flex justify-between items-center border-b border-slate-800 pb-6 mb-6"
-    >
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">
-          📊 Painel de Controle Operacional
-        </h1>
-        <p class="text-sm text-slate-400">
-          Monitoramento de Macas e Fluxo Hospitalar
-        </p>
-      </div>
-      <div class="text-right space-y-2">
-        <span
-          class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold px-3 py-1.5 rounded-lg"
-          >MODO MONITOR</span
-        >
-        <button
-          class="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-slate-800"
-          id="btn-logout"
-        >
-          Logout
-        </button>
-      </div>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100 p-6">
+
+    <div class="flex justify-between items-center border-b border-slate-800 pb-6 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight">📊 Painel de Controle Operacional</h1>
+            <p class="text-sm text-slate-400">Monitoramento de Macas e Fluxo Hospitalar</p>
+        </div>
+        <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold px-3 py-1.5 rounded-lg">MONITORAMENTO CENTRAL</span>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <div class="bg-slate-800/50 border border-slate-800 p-5 rounded-xl">
-        <p class="text-sm font-semibold text-slate-400">Aguardando Maqueiro</p>
-        <p class="text-3xl font-bold text-sky-400 mt-2" id="qtd-pendentes">0</p>
-      </div>
-      <div class="bg-slate-800/50 border border-slate-800 p-5 rounded-xl">
-        <p class="text-sm font-semibold text-slate-400">Em Atendimento</p>
-        <p class="text-3xl font-bold text-amber-400 mt-2" id="qtd-andamento">
-          0
-        </p>
-      </div>
-      <div class="bg-slate-800/50 border border-slate-800 p-5 rounded-xl">
-        <p class="text-sm font-semibold text-slate-400">
-          Justificativas de Atraso (Hoje)
-        </p>
-        <p
-          class="text-3xl font-bold text-rose-400 mt-2"
-          id="qtd-justificativas"
-        >
-          0
-        </p>
-      </div>
+        <div class="bg-slate-800/50 border border-slate-800 p-5 rounded-xl">
+            <p class="text-sm font-semibold text-slate-400">Aguardando Maqueiro</p>
+            <p class="text-3xl font-bold text-sky-400 mt-2" id="qtd-pendentes">0</p>
+        </div>
+        <div class="bg-slate-800/50 border border-slate-800 p-5 rounded-xl">
+            <p class="text-sm font-semibold text-slate-400">Em Atendimento</p>
+            <p class="text-3xl font-bold text-amber-400 mt-2" id="qtd-andamento">0</p>
+        </div>
+        <div class="bg-slate-800/50 border border-slate-800 p-5 rounded-xl">
+            <p class="text-sm font-semibold text-slate-400">Justificativas de Atraso (Hoje)</p>
+            <p class="text-3xl font-bold text-rose-400 mt-2" id="qtd-justificativas">0</p>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-slate-800/30 border border-slate-800/80 rounded-2xl p-5">
-        <h2
-          class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2"
-        >
-          <span class="w-2 h-2 rounded-full bg-sky-500"></span> Fila de Espera
-          (Não Iniciados)
-        </h2>
-        <div class="space-y-3" id="coluna-pendentes"></div>
-      </div>
-
-      <div class="bg-slate-800/30 border border-slate-800/80 rounded-2xl p-5">
-        <h2
-          class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2"
-        >
-          <span class="w-2 h-2 rounded-full bg-amber-500"></span> Em Transporte
-          Operacional
-        </h2>
-        <div class="space-y-3" id="coluna-andamento"></div>
-      </div>
+        <div class="bg-slate-800/30 border border-slate-800/80 rounded-2xl p-5">
+            <h2 class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Fila de Espera</h2>
+            <div class="space-y-3" id="coluna-pendentes"></div>
+        </div>
+        <div class="bg-slate-800/30 border border-slate-800/80 rounded-2xl p-5">
+            <h2 class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Em Transporte</h2>
+            <div class="space-y-3" id="coluna-andamento"></div>
+        </div>
     </div>
 
-    <div
-      class="mt-8 bg-slate-800/20 border border-slate-800/60 rounded-2xl p-5"
-    >
-      <h2 class="text-base font-bold text-slate-400 mb-3">
-        ⚠️ Alertas de Atraso Recentes
-      </h2>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead
-            class="text-xs text-slate-500 uppercase border-b border-slate-800"
-          >
-            <tr>
-              <th class="py-2">Pedido ID</th>
-              <th class="py-2">Maqueiro</th>
-              <th class="py-2">Justificativa / Motivo Informado</th>
-              <th class="py-2 text-right">Horário</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-justificativas"></tbody>
-        </table>
-      </div>
+    <div class="mt-8 bg-slate-800/20 border border-slate-800/60 rounded-2xl p-5">
+        <h2 class="text-base font-bold text-slate-400 mb-3">⚠️ Alertas de Atraso Recentes</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="text-xs text-slate-500 uppercase border-b border-slate-800">
+                    <tr>
+                        <th class="py-2">Pedido ID</th>
+                        <th class="py-2">Maqueiro</th>
+                        <th class="py-2">Justificativa Informada</th>
+                        <th class="py-2 text-right">Horário</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-justificativas"></tbody>
+            </table>
+        </div>
     </div>
 
     <script src="central.js"></script>
-  </body>
+</body>
 </html>

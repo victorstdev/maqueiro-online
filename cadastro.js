@@ -4,26 +4,13 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const containerNotificacao = document.getElementById('container-notificacao');
 
-// Função moderna para exibir notificações na página sem travar a tela
 function mostrarNotificacao(mensagem, tipo = 'sucesso') {
     const toast = document.createElement('div');
-    const corBackground = tipo === 'sucesso' ? 'bg-emerald-500' : 'bg-rose-500';
-    
-    toast.className = `${corBackground} text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold transition-all duration-300 transform translate-y-5 opacity-0`;
+    const corBg = tipo === 'sucesso' ? 'bg-emerald-500' : 'bg-rose-500';
+    toast.className = `${corBg} text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold transition-all duration-300`;
     toast.textContent = mensagem;
-
     containerNotificacao.appendChild(toast);
-
-    // Animação de entrada
-    setTimeout(() => {
-        toast.classList.remove('translate-y-5', 'opacity-0');
-    }, 10);
-
-    // Remove automaticamente após 4 segundos
-    setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y--5');
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    setTimeout(() => toast.remove(), 4000);
 }
 
 document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
@@ -36,9 +23,7 @@ document.getElementById('form-cadastro').addEventListener('submit', async (e) =>
     if (error) {
         mostrarNotificacao(`Erro ao cadastrar: ${error.message}`, 'erro');
     } else {
-        mostrarNotificacao("Cadastro realizado! Redirecionando...", 'sucesso');
-        setTimeout(() => {
-            window.location.href = 'maqueiro.html';
-        }, 1500);
+        mostrarNotificacao("Cadastro realizado! Configurando perfil padrão de Maqueiro...", 'sucesso');
+        setTimeout(() => { window.location.href = 'maqueiro.html'; }, 1500);
     }
 });
