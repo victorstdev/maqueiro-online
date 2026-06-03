@@ -29,7 +29,7 @@ async function inicializarNotificacoesPush() {
             const chaves = JSON.parse(JSON.stringify(inscricao));
             
             const dadosSalvar = {
-                maqueiro_id: idMaqueiroLogado, nome: nomeMaqueiroLogado, endpoint: chaves.endpoint,
+                maqueiro_id: idMaqueiroLogado, endpoint: chaves.endpoint,
                 p256dh: chaves.keys.p256dh, auth_token: chaves.keys.auth
             };
 
