@@ -106,4 +106,4 @@ supabaseClient.channel('painel_central')
         txtJustificativas.textContent = parseInt(txtJustificativas.textContent) + 1;
     }).subscribe();
 
-protetelaCentral();
+protegerTelaCentral();

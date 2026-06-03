@@ -1,6 +1,14 @@
 /* Customizações e utilitários visuais para as telas */
 .card-maca {
-    @apply bg-white p-5 rounded-2xl shadow-sm border-l-8 transition-all duration-200;
+    background-color: #ffffff;
+    padding: 1.25rem; /* Equivalente ao p-5 */
+    border-radius: 1rem; /* Equivalente ao rounded-2xl */
+    border-left-width: 8px; /* Equivalente ao border-l-8 */
+    border-left-style: solid;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* Equivalente ao shadow-sm */
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms; /* Equivalente ao transition-all duration-200 */
 }
 
 /* Cores das bordas com base na criticidade */
@@ -12,7 +20,6 @@
 }
 .prioridade-ALTA {
     border-left-color: #f43f5e; /* Rosa/Vermelho */
-    animation: pulse-urgente 2s infinite;
 }
 
 @keyframes pulse-urgente {
