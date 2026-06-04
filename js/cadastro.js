@@ -15,15 +15,23 @@ function mostrarNotificacao(mensagem, tipo = 'sucesso') {
 
 document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('email').value;
+    const email = document.getElementById('email').value.trim().toLowerCase();
     const senha = document.getElementById('senha').value;
+
+    if (senha.length < 6) {
+        mostrarNotificacao("A senha deve ter no mínimo 6 caracteres.", "erro");
+        return;
+    }
+
+    mostrarNotificacao("Criando conta no hospital...", "sucesso");
 
     const { data, error } = await supabaseClient.auth.signUp({ email, password: senha });
 
     if (error) {
-        mostrarNotificacao(`Erro ao cadastrar: ${error.message}`, 'erro');
+        mostrarNotificacao(`Erro ao cadastrar: ${error.message}`, "erro");
     } else {
-        mostrarNotificacao("Cadastro realizado! Configurando perfil padrão de Maqueiro...", 'sucesso');
-        setTimeout(() => { window.location.href = 'maqueiro.html'; }, 1500);
+        mostrarNotificacao("🎉 Conta criada! Redirecionando para o login...", "sucesso");
+        await supabaseClient.auth.signOut(); // Limpa tokens residuais
+        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
     }
 });

@@ -1,28 +1,19 @@
-/* Customizações e utilitários visuais para as telas */
 .card-maca {
     background-color: #ffffff;
-    padding: 1.25rem; /* Equivalente ao p-5 */
-    border-radius: 1rem; /* Equivalente ao rounded-2xl */
-    border-left-width: 8px; /* Equivalente ao border-l-8 */
+    padding: 1.25rem;
+    border-radius: 1rem;
+    border-left-width: 8px;
     border-left-style: solid;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* Equivalente ao shadow-sm */
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 200ms; /* Equivalente ao transition-all duration-200 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 200ms ease;
 }
+.prioridade-BAIXA { border-left-color: #0ea5e9; }
+.prioridade-MEDIA { border-left-color: #f59e0b; }
+.prioridade-ALTA { border-left-color: #f43f5e; }
 
-/* Cores das bordas com base na criticidade */
-.prioridade-BAIXA {
-    border-left-color: #0ea5e9; /* Azul Sky */
-}
-.prioridade-MEDIA {
-    border-left-color: #f59e0b; /* Âmbar */
-}
-.prioridade-ALTA {
-    border-left-color: #f43f5e; /* Rosa/Vermelho */
-}
+.animar-alerta-critico { animation: pulse-urgente 1.5s infinite; }
 
 @keyframes pulse-urgente {
     0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(0.99); opacity: 0.9; }
+    50% { transform: scale(0.96); opacity: 0.85; }
 }

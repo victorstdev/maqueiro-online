@@ -3,42 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro - Hospital</title>
+    <title>Cadastro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-900 min-h-screen flex items-center justify-center p-4">
-
     <div id="container-notificacao" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
-
-    <div class="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
-        <div class="text-center mb-6">
-            <span class="text-4xl">🏥</span>
-            <h1 class="text-2xl font-bold text-slate-800 mt-2">Criar Nova Conta</h1>
-            <p class="text-sm text-slate-500">Solicite seu acesso ao sistema de macas</p>
-        </div>
-
+    <div class="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl space-y-6">
+        <h2 class="text-xl font-bold text-slate-800 text-center">Criar Nova Conta</h2>
         <form id="form-cadastro" class="space-y-4">
-            <div class="flex flex-col gap-1">
-                <label for="email" class="text-sm font-semibold text-slate-700">E-mail Institucional</label>
-                <input type="email" id="email" class="p-3 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500" required>
+            <div>
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-mail</label>
+                <input type="email" id="email" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none" required>
             </div>
-
-            <div class="flex flex-col gap-1">
-                <label for="senha" class="text-sm font-semibold text-slate-700">Senha (mínimo 6 caracteres)</label>
-                <input type="password" id="senha" class="p-3 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500" required>
+            <div>
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Senha de Acesso</label>
+                <input type="password" id="senha" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none" required>
             </div>
-
-            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors shadow-md">
-                Concluir Cadastro
-            </button>
-            
-            <a href="index.html" class="block text-center w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-xl transition-colors text-sm">
-                Já tem uma conta? Voltar para o Login
-            </a>
+            <button type="submit" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition-colors">Salvar</button>
         </form>
+        <a href="index.html" class="block text-center text-xs text-slate-400 hover:underline">Voltar ao Login</a>
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="cadastro.js"></script>
 </body>
 </html>
