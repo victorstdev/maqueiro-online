@@ -13,48 +13,16 @@
     <div class="bg-slate-800 text-white p-4 sticky top-0 shadow-md flex justify-between items-center z-10">
         <div>
             <h1 class="font-bold text-lg">🏃 Fila de Chamados</h1>
-            <p class="text-xs text-slate-400" id="maqueiro"></p>
+            <p class="text-xs text-slate-400" id="usuario"></p>
         </div>
         <span class="bg-emerald-500 text-slate-900 text-xs font-extrabold px-2.5 py-1 rounded-full animate-pulse">ONLINE</span>
-        <button onclick="logout()" class="bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold px-3 py-1.5 rounded-lg">Sair</button>
+        <button id="logout" class="bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold px-3 py-1.5 rounded-lg">Sair</button>
     </div>
 
     <div class="p-4 max-w-md mx-auto space-y-4" id="fila">
         <!-- Injeção dos cards via JS -->
     </div>
 
-    <!-- 🌟 NOVO: Modal de Justificativa de Atraso (UX Elegante) -->
-    <div id="modal-justificativa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden opacity-0 transition-all duration-300">
-        <div class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl transform translate-y-full transition-transform duration-300 space-y-5" id="modal-conteudo">
-            <div class="text-center sm:text-left">
-                <h3 class="text-lg font-bold text-slate-800 flex items-center justify-center sm:justify-start gap-2">
-                    ⚠️ Chamado com Prazo Estourado
-                </h3>
-                <p class="text-sm text-slate-500 mt-1">Selecione o motivo do atraso para conseguir encerrar o atendimento:</p>
-            </div>
-
-            <!-- Grade de Botões Gigantes para Toque com Uma Mão -->
-            <div class="grid grid-cols-1 gap-3">
-                <button class="w-full p-4 bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-semibold rounded-xl border border-slate-200 hover:border-amber-300 text-left transition-colors flex items-center gap-3" onclick="enviarJustificativa('Elevador de Macas em Manutenção')">
-                    🛗 <span class="text-sm">Elevador em Manutenção</span>
-                </button>
-                <button class="w-full p-4 bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-semibold rounded-xl border border-slate-200 hover:border-amber-300 text-left transition-colors flex items-center gap-3" onclick="enviarJustificativa('Falta de Cilindro de O₂ no Setor')">
-                    🎈 <span class="text-sm">Falta de Cilindro de O₂</span>
-                </button>
-                <button class="w-full p-4 bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-semibold rounded-xl border border-slate-200 hover:border-amber-300 text-left transition-colors flex items-center gap-3" onclick="enviarJustificativa('Paciente em Procedimento / Exame')">
-                    🩺 <span class="text-sm">Paciente em Procedimento</span>
-                </button>
-                <button class="w-full p-4 bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-semibold rounded-xl border border-slate-200 hover:border-amber-300 text-left transition-colors flex items-center gap-3" onclick="enviarJustificativa('Aguardando Liberação da Enfermagem')">
-                    📋 <span class="text-sm">Aguardando Enfermagem</span>
-                </button>
-            </div>
-
-            <button class="w-full py-3 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 rounded-xl" onclick="fecharModalJustificativa()">
-                Cancelar
-            </button>
-        </div>
-    </div>
-
-    <script src="maqueiro.js"></script>
+    <script src="js/maqueiro.js"></script>
 </body>
 </html>

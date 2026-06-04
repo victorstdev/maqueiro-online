@@ -1,5 +1,7 @@
-const SUPABASE_URL = 'https://wcccerxilknnbybmjvbp.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjY2NlcnhpbGtubmJ5Ym1qdmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYyODEsImV4cCI6MjA5NTM4MjI4MX0.42BLv5Dk1N-OMxv0_33LfX9MYXfOOD6h_mQS64M3gv0';
+import config from './config.js';
+
+const SUPABASE_URL = config.SUPABASE_URL;
+const SUPABASE_KEY = config.SUPABASE_KEY;
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const containerNotificacao = document.getElementById('container-notificacao');
