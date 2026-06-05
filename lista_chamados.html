@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Chamados - E-Maqueiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        industrial: { bg: '#f3f4f6', surface: '#ffffff', nav: '#1e293b', text: '#0f172a', muted: '#64748b' },
+                        clinico: { alta: '#ef4444', media: '#f59e0b', baixa: '#10b981', info: '#3b82f6' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
+</head>
+
+<body class="bg-industrial-bg text-industrial-text font-sans antialiased">
+    <div id="notification-container"></div>
+
+    <nav class="bg-industrial-nav h-[60px] px-8 flex items-center gap-6 shadow-sm">
+        <a href="criar_chamado.html" id="link-criar"
+            class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1">Novo
+            Chamado</a>
+        <a href="lista_chamados.html"
+            class="text-white text-sm font-medium transition-colors border-b-2 border-white h-full flex items-center px-1">Painel
+            de Chamados</a>
+        <a href="central.html" id="link-admin"
+            class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1"
+            style="display:none;">Central Admin</a>
+        <a href="configuracoes.html" id="link-config"
+            class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1"
+            style="display:none;">Configurações</a>
+        <button onclick="supabaseClient.auth.signOut().then(() => window.location.href='index.html')"
+            class="ml-auto bg-transparent text-slate-100 text-sm py-2 px-4 rounded hover:bg-white/10 transition-colors">Sair</button>
+    </nav>
+
+    <main class="max-w-[1200px] mx-auto mt-10 px-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold tracking-tight">Painel de Chamados Ativos</h2>
+            <p class="text-industrial-muted text-sm">Atualizações automáticas em tempo real</p>
+        </div>
+
+        <div id="grid-chamados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <p class="text-industrial-muted text-sm col-span-full">Conectando ao fluxo hospitalar...</p>
+        </div>
+    </main>
+
+    <div id="modal-justificativa"
+        class="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50"
+        style="display:none;">
+        <div class="bg-industrial-surface p-10 rounded-md shadow-xl max-w-[480px] w-11/12 flex flex-col gap-5">
+            <h3 class="text-xl font-bold text-clinico-alta">Prazo Limite Excedido</h3>
+            <p class="text-sm text-industrial-muted">Este chamado ultrapassou o tempo estimado. Selecione uma
+                justificativa obrigatória:</p>
+
+            <select id="select-justificativa"
+                class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-md focus:outline-none">
+                <option value="Alta demanda de chamados simultâneos">Alta demanda de chamados simultâneos</option>
+                <option value="Elevadores retidos / lentidão no transporte">Elevadores retidos / lentidão no transporte
+                </option>
+                <option value="Paciente não estava pronto no setor de origem">Paciente não estava pronto no setor de
+                    origem</option>
+                <option value="Intercorrência clínica durante o trajeto">Intercorrência clínica durante o trajeto
+                </option>
+            </select>
+
+            <div class="flex justify-end gap-3 mt-2">
+                <button onclick="document.getElementById('modal-justificativa').style.display='none'"
+                    class="bg-slate-200 text-industrial-text font-semibold py-3 px-5 rounded-md text-sm hover:bg-slate-300">Cancelar</button>
+                <button id="btn-salvar-justificativa"
+                    class="bg-industrial-text text-white font-semibold py-3 px-5 rounded-md text-sm hover:bg-slate-800">Salvar
+                    e Concluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        let usuarioId = null;
+        let perfilUsuario = null;
+        let chamadosAtivos = [];
+        let intervalId = null;
+        let chamadoParaConcluirId = null;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { window.location.href = "index.html"; return; }
+
+            usuarioId = session.user.id;
+            perfilUsuario = await obterPerfilUsuario(usuarioId);
+
+            if (perfilUsuario === 'MAQUEIRO') document.getElementById('link-criar').style.display = 'none';
+            if (perfilUsuario === 'ADMIN') {
+                document.getElementById('link-admin').style.display = 'inline-block';
+                document.getElementById('link-config').style.display = 'inline-block';
+            }
+
+            carregarChamadosDaBase();
+            configurarRealtime();
+        });
+
+        async function carregarChamadosDaBase() {
+            if (intervalId) clearInterval(intervalId);
+
+            const { data } = await supabaseClient.from('chamado').select('*').neq('status', 'concluido');
+            if (data) {
+                chamadosAtivos = data;
+                renderizarCards();
+                iniciarTimers();
+            }
+        }
+
+        async function configurarRealtime() {
+            supabaseClient.removeAllChannels();
+
+            // 1. Busca a sessão atualizada para pegar o token de acesso (JWT)
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const token = session ? session.access_token : null;
+
+            // 2. Passa o token explicitamente na criação do canal
+            const canal = supabaseClient.channel('mudancas-chamados-hospital', {
+                config: {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            });
+
+            canal.on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'chamado'
+                },
+                (payload) => {
+                    console.log("Mudança recebida em tempo real:", payload);
+                    carregarChamadosDaBase();
+                }
+            )
+                .subscribe((status, err) => {
+                    console.log("Status da conexão Realtime:", status);
+                    if (err || status === 'CHANNEL_ERROR') {
+                        console.error("Erro no canal de transporte:", err);
+                    }
+                    if (status === 'SUBSCRIBED') {
+                        console.log("Conectado com sucesso ao Realtime!");
+                    }
+                });
+        }
+
+        function renderizarCards() {
+            const grid = document.getElementById('grid-chamados');
+            grid.innerHTML = "";
+
+            if (chamadosAtivos.length === 0) {
+                grid.innerHTML = '<p class="text-industrial-muted text-sm col-span-full">Nenhum chamado ativo em fila no momento.</p>';
+                return;
+            }
+
+            const peso = { alta: 1, media: 2, baixa: 3 };
+            chamadosAtivos.sort((a, b) => peso[a.prioridade] - peso[b.prioridade]);
+
+            const bordas = { alta: 'border-clinico-alta', media: 'border-clinico-media', baixa: 'border-clinico-baixa' };
+
+            chamadosAtivos.forEach(c => {
+                const card = document.createElement('div');
+                card.className = `bg-industrial-surface rounded-md shadow-md p-6 flex flex-col gap-4 border-t-4 ${bordas[c.prioridade]}`;
+
+                let botaoAction = '';
+                if (perfilUsuario !== 'SOLICITANTE') {
+                    if (c.status === 'aberto') {
+                        botaoAction = `<button onclick="aceitarChamado(${c.id})" class="w-full bg-industrial-text hover:bg-slate-800 text-white font-semibold p-2.5 rounded-md text-sm transition-colors">Aceitar Chamado</button>`;
+                    } else if (c.status === 'em_andamento') {
+                        botaoAction = `<button onclick="checarPrazoEConcluir(${c.id})" class="w-full bg-clinico-baixa hover:bg-emerald-600 text-white font-semibold p-2.5 rounded-md text-sm transition-colors">Concluir Atendimento</button>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wide text-industrial-muted">${c.status.replace('_', ' ')}</span>
+                        <h3 class="text-base font-bold text-industrial-text">${c.origem} → ${c.destino}</h3>
+                    </div>
+                    <p class="text-xs text-industrial-muted flex-grow"><strong>Motivo:</strong> ${c.motivo} <br> ${c.observacoes ? `<strong>Obs:</strong> ${c.observacoes}` : ''}</p>
+                    <div class="font-mono text-2xl font-bold tracking-tighter text-industrial-text bg-slate-50 p-2.5 text-center rounded-md" id="cronometro-${c.id}">--:--</div>
+                    <div class="mt-2">${botaoAction}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function iniciarTimers() {
+            const { data: prazosBanco } = await supabaseClient.from('configuracao_prazo').select('*');
+            const tempos = { alta: 5, media: 10, baixa: 20 };
+            if (prazosBanco) prazosBanco.forEach(p => tempos[p.prioridade] = p.minutos);
+
+            intervalId = setInterval(() => {
+                chamadosAtivos.forEach(c => {
+                    const el = document.getElementById(`cronometro-${c.id}`);
+                    if (!el) return;
+
+                    const inicio = new Date(c.criado_em).getTime();
+                    const limite = inicio + (tempos[c.prioridade] * 60 * 1000);
+                    const agora = new Date().getTime();
+                    const diff = limite - agora;
+
+                    if (diff > 0) {
+                        const min = Math.floor(diff / 60000);
+                        const sec = Math.floor((diff % 60000) / 1000);
+                        el.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
+                    } else {
+                        el.innerText = "Prazo Estourado!";
+                        el.className = "font-mono text-xl font-bold text-clinico-alta bg-red-50 p-2.5 text-center rounded-md";
+                        el.dataset.estourado = "true";
+                    }
+                });
+            }, 1000);
+        }
+
+        async function aceitarChamado(id) {
+            await supabaseClient.from('chamado').update({ status: 'em_andamento', aceito_em: new Date().toISOString(), maqueiro_id: usuarioId }).eq('id', id);
+        }
+
+        function checarPrazoEConcluir(id) {
+            const el = document.getElementById(`cronometro-${id}`);
+            if (el && el.dataset.estourado === "true") {
+                chamadoParaConcluirId = id;
+                document.getElementById('modal-justificativa').style.display = 'flex';
+            } else {
+                finalizarChamadoNoBanco(id);
+            }
+        }
+
+        document.getElementById('btn-salvar-justificativa').addEventListener('click', async () => {
+            const txt = document.getElementById('select-justificativa').value;
+            await supabaseClient.from('justificativa').insert([{ chamado_id: chamadoParaConcluirId, usuario_id: usuarioId, justificativa: txt }]);
+            await finalizarChamadoNoBanco(chamadoParaConcluirId);
+            document.getElementById('modal-justificativa').style.display = 'none';
+        });
+
+        async function finalizarChamadoNoBanco(id) {
+            await supabaseClient.from('chamado').update({ status: 'concluido', concluido_em: new Date().toISOString() }).eq('id', id);
+        }
+    </script>
+</body>
+
+</html>

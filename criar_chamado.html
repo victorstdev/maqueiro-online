@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Maqueiro - E-Maqueiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        industrial: { bg: '#f3f4f6', surface: '#ffffff', nav: '#1e293b', text: '#0f172a', muted: '#64748b' },
+                        clinico: { alta: '#ef4444', media: '#f59e0b', baixa: '#10b981', info: '#3b82f6' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-industrial-bg text-industrial-text font-sans antialiased">
+    <div id="notification-container"></div>
+    
+    <nav class="bg-industrial-nav h-[60px] px-8 flex items-center gap-6 shadow-sm">
+        <a href="criar_chamado.html" class="text-white text-sm font-medium transition-colors border-b-2 border-white h-full flex items-center px-1">Novo Chamado</a>
+        <a href="lista_chamados.html" id="link-painel" class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1">Painel de Chamados</a>
+        <a href="central.html" id="link-admin" class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1" style="display:none;">Central Admin</a>
+        <a href="configuracoes.html" id="link-config" class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1" style="display:none;">Configurações</a>
+        <button onclick="supabaseClient.auth.signOut().then(() => window.location.href='index.html')" class="ml-auto bg-transparent text-slate-100 text-sm py-2 px-4 rounded hover:bg-white/10 transition-colors">Sair</button>
+    </nav>
+
+    <main class="max-w-[800px] mx-auto mt-10 p-10 bg-industrial-surface rounded-md shadow-md">
+        <h2 class="text-2xl font-bold tracking-tight mb-1">Solicitar Maqueiro</h2>
+        <p class="text-industrial-muted text-sm mb-8">Preencha os dados do local e motivo do acionamento</p>
+
+        <form id="form-criar-chamado" class="flex flex-col gap-6">
+            <div class="grid grid-columns-1 md:grid-cols-2 gap-6">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[11px] font-semibold uppercase tracking-wider text-industrial-muted">Origem</label>
+                    <select id="input-origem" required class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:bg-white focus:border-clinico-info transition-all">
+                        <option value="" disabled selected>Carregando setores...</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[11px] font-semibold uppercase tracking-wider text-industrial-muted">Destino</label>
+                    <select id="input-destino" required class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:bg-white focus:border-clinico-info transition-all">
+                        <option value="" disabled selected>Carregando setores...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-semibold uppercase tracking-wider text-industrial-muted">Motivo da Solicitação</label>
+                <input type="text" id="input-motivo" required placeholder="Ex: Transporte para Tomografia de urgência" class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:bg-white focus:border-clinico-info transition-all">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-semibold uppercase tracking-wider text-industrial-muted">Observações (Opcional)</label>
+                <textarea id="input-observacoes" rows="3" placeholder="Restrições médicas, uso de oxigênio, etc." class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:bg-white focus:border-clinico-info transition-all"></textarea>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-semibold uppercase tracking-wider text-industrial-muted">Nível de Prioridade</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <button type="button" class="btn-prioridade bg-slate-100 font-medium py-3 rounded-md text-sm text-industrial-muted transition-all" data-prioridade="alta">Alta</button>
+                    <button type="button" class="btn-prioridade bg-slate-100 font-medium py-3 rounded-md text-sm text-industrial-muted active-btn-media" data-prioridade="media">Média</button>
+                    <button type="button" class="btn-prioridade bg-slate-100 font-medium py-3 rounded-md text-sm text-industrial-muted" data-prioridade="baixa">Baixa</button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-industrial-text hover:bg-slate-800 text-white font-semibold p-4 rounded-md text-sm transition-colors mt-4">Emitir Chamado</button>
+        </form>
+    </main>
+
+    <style>
+        /* Classes auxiliares locais para controle de botões de prioridade ativa no Tailwind */
+        .btn-prioridade.active-alta { background-color: #ef4444 !important; color: white !important; }
+        .btn-prioridade.active-media { background-color: #f59e0b !important; color: white !important; }
+        .btn-prioridade.active-baixa { background-color: #10b981 !important; color: white !important; }
+    </style>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        let idUsuarioLogado = null;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { window.location.href = "index.html"; return; }
+            
+            idUsuarioLogado = session.user.id;
+            const perfil = await obterPerfilUsuario(idUsuarioLogado);
+            
+            if (perfil === 'MAQUEIRO') { window.location.href = "lista_chamados.html"; return; }
+            if (perfil === 'ADMIN') {
+                document.getElementById('link-admin').style.display = 'inline-block';
+                document.getElementById('link-config').style.display = 'inline-block';
+            }
+
+            popularFormularioDinamico();
+            configurarBotoesPrioridade();
+        });
+
+        async function popularFormularioDinamico() {
+            const { data } = await supabaseClient.from('parametro_formulario').select('*');
+            const orig = document.getElementById('input-origem');
+            const dest = document.getElementById('input-destino');
+            
+            orig.innerHTML = '<option value="" disabled selected>Selecione a Origem</option>';
+            dest.innerHTML = '<option value="" disabled selected>Selecione o Destino</option>';
+
+            if (data) {
+                data.forEach(p => {
+                    if (p.tipo === 'SETOR') {
+                        orig.add(new Option(p.valor, p.valor));
+                        dest.add(new Option(p.valor, p.valor));
+                    }
+                });
+            }
+        }
+
+        function configurarBotoesPrioridade() {
+            const botoes = document.querySelectorAll('.btn-prioridade');
+            
+            // Força estado inicial visual na prioridade média
+            botoes[1].classList.add('active-media');
+
+            botoes.forEach(b => b.addEventListener('click', function() {
+                botoes.forEach(x => x.classList.remove('active-alta', 'active-media', 'active-baixa'));
+                const p = this.dataset.prioridade;
+                this.classList.add(`active-${p}`);
+            }));
+        }
+
+        document.getElementById('form-criar-chamado').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ativo = document.querySelector('.btn-prioridade.active-alta, .btn-prioridade.active-media, .btn-prioridade.active-baixa');
+            const prioridade = ativo ? ativo.dataset.prioridade : 'media';
+
+            const { error } = await supabaseClient.from('chamado').insert([{
+                origem: document.getElementById('input-origem').value,
+                destino: document.getElementById('input-destino').value,
+                motivo: document.getElementById('input-motivo').value,
+                observacoes: document.getElementById('input-observacoes').value,
+                prioridade: prioridade,
+                usuario_id: idUsuarioLogado
+            }]);
+
+            if (error) {
+                mostrarNotificacao(error.message, "erro");
+            } else {
+                mostrarNotificacao("Chamado emitido com sucesso!", "sucesso");
+                document.getElementById('form-criar-chamado').reset();
+                configurarBotoesPrioridade();
+            }
+        });
+    </script>
+</body>
+</html>

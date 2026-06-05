@@ -3,27 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro</title>
+    <title>Cadastro - E-Maqueiro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4">
-    <div id="container-notificacao" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
-    <div class="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl space-y-6">
-        <h2 class="text-xl font-bold text-slate-800 text-center">Criar Nova Conta</h2>
-        <form id="form-cadastro" class="space-y-4">
-            <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-mail</label>
-                <input type="email" id="email" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none" required>
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Senha de Acesso</label>
-                <input type="password" id="senha" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none" required>
-            </div>
-            <button type="submit" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition-colors">Salvar</button>
-        </form>
-        <a href="index.html" class="block text-center text-xs text-slate-400 hover:underline">Voltar ao Login</a>
-    </div>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        industrial: { bg: '#f3f4f6', surface: '#ffffff', text: '#0f172a', muted: '#64748b' },
+                        clinico: { info: '#3b82f6' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script type="module" src="js/cadastro.js"></script>
+</head>
+<body class="bg-industrial-bg text-industrial-text font-sans antialiased">
+    <div id="notification-container"></div>
+
+    <section class="max-w-[420px] mx-auto mt-24 p-10 bg-industrial-surface rounded-md shadow-md">
+        <h2 class="text-2xl font-bold tracking-tight mb-1">Criar Nova Conta</h2>
+        <p class="text-industrial-muted text-sm mb-8">Utilize seu e-mail institucional</p>
+        
+        <form id="form-cadastro" class="flex flex-col gap-5">
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-semibold uppercase tracking-wider text-industrial-muted">E-mail</label>
+                <input type="email" id="cadastro-email" required class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:bg-white focus:border-clinico-info focus:ring-4 focus:ring-blue-500/15 transition-all">
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-semibold uppercase tracking-wider text-industrial-muted">Senha</label>
+                <input type="password" id="cadastro-senha" required class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:bg-white focus:border-clinico-info focus:ring-4 focus:ring-blue-500/15 transition-all">
+            </div>
+            <button type="submit" class="w-full bg-industrial-text hover:bg-slate-800 text-white font-semibold p-3.5 rounded-md text-sm transition-colors">Concluir Cadastro</button>
+        </form>
+        <p class="mt-6 text-center text-sm text-industrial-muted"><a href="index.html" class="text-clinico-info hover:underline">Voltar para o Login</a></p>
+    </section>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('cadastro-email').value;
+            const senha = document.getElementById('cadastro-senha').value;
+
+            const { error } = await supabaseClient.auth.signUp({ email: email, password: senha });
+            if (error) {
+                mostrarNotificacao(error.message, "erro");
+            } else {
+                mostrarNotificacao("Cadastro realizado com sucesso!", "sucesso");
+                setTimeout(() => { window.location.href = "index.html"; }, 2000);
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - E-Maqueiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        industrial: { bg: '#f3f4f6', surface: '#ffffff', nav: '#1e293b', text: '#0f172a', muted: '#64748b' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
+</head>
+<body class="bg-industrial-bg text-industrial-text font-sans antialiased">
+    <div id="notification-container"></div>
+    
+    <nav class="bg-industrial-nav h-[60px] px-8 flex items-center gap-6 shadow-sm">
+        <a href="criar_chamado.html" class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1">Novo Chamado</a>
+        <a href="lista_chamados.html" class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1">Painel de Chamados</a>
+        <a href="central.html" class="text-slate-400 hover:text-white text-sm font-medium transition-colors h-full flex items-center px-1">Central Admin</a>
+        <a href="configuracoes.html" class="text-white text-sm font-medium transition-colors border-b-2 border-white h-full flex items-center px-1">Configurações</a>
+        <button onclick="supabaseClient.auth.signOut().then(() => window.location.href='index.html')" class="ml-auto bg-transparent text-slate-100 text-sm py-2 px-4 rounded hover:bg-white/10 transition-colors">Sair</button>
+    </nav>
+
+    <main class="max-w-[1200px] mx-auto mt-10 px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        
+        <div class="flex flex-col gap-8">
+            <section class="bg-industrial-surface p-6 rounded-md shadow-md">
+                <h2 class="text-xl font-bold tracking-tight mb-1">Prazos das Prioridades (Minutos)</h2>
+                <p class="text-industrial-muted text-xs mb-4">Janela limite de atendimento por criticidade</p>
+                <form id="form-prazos" class="flex flex-col gap-4">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1"><label class="text-[10px] font-bold uppercase text-industrial-muted">Alta</label><input type="number" id="prazo-alta" required class="text-sm p-2 bg-slate-50 border rounded-md focus:outline-none"></div>
+                        <div class="flex flex-col gap-1"><label class="text-[10px] font-bold uppercase text-industrial-muted">Média</label><input type="number" id="prazo-media" required class="text-sm p-2 bg-slate-50 border rounded-md focus:outline-none"></div>
+                        <div class="flex flex-col gap-1"><label class="text-[10px] font-bold uppercase text-industrial-muted">Baixa</label><input type="number" id="prazo-baixa" required class="text-sm p-2 bg-slate-50 border rounded-md focus:outline-none"></div>
+                    </div>
+                    <button type="submit" class="bg-industrial-text hover:bg-slate-800 text-white font-semibold text-xs p-2.5 rounded-md self-end transition-colors">Atualizar Tempos</button>
+                </form>
+            </section>
+
+            <section class="bg-industrial-surface p-6 rounded-md shadow-md">
+                <h2 class="text-xl font-bold tracking-tight mb-1">Elementos do Formulário</h2>
+                <p class="text-industrial-muted text-xs mb-4">Adicione novos setores ou motivos</p>
+                
+                <div class="flex gap-2 mb-4">
+                    <select id="param-tipo" class="text-sm p-2 bg-slate-50 border rounded-md focus:outline-none w-[30%]"><option value="SETOR">Setor</option></select>
+                    <input type="text" id="param-valor" placeholder="Ex: Ala Norte" class="text-sm p-2 bg-slate-50 border rounded-md focus:outline-none flex-grow">
+                    <button onclick="adicionarParametro()" class="bg-industrial-text hover:bg-slate-800 text-white font-bold px-4 rounded-md text-sm">+</button>
+                </div>
+
+                <div class="w-full max-h-[220px] overflow-y-auto">
+                    <table class="w-full text-sm text-left">
+                        <tbody id="tabela-parametros"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <section class="bg-industrial-surface p-6 rounded-md shadow-md flex flex-col">
+            <h2 class="text-xl font-bold tracking-tight mb-1">Auditoria de Justificativas</h2>
+            <p class="text-industrial-muted text-xs mb-4">Lista de justificativas preenchidas por atraso</p>
+            <div class="w-full overflow-y-auto flex-grow max-h-[500px]">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 font-bold text-industrial-muted border-b border-slate-100 uppercase tracking-wider text-[10px]"><th class="p-3">Chamado</th><th class="p-3">Maqueiro</th><th class="p-3">Justificativa</th></tr>
+                    </thead>
+                    <tbody id="tabela-justificativas"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { window.location.href = "index.html"; return; }
+            const perfil = await obterPerfilUsuario(session.user.id);
+            if (perfil !== 'ADMIN') { window.location.href = "lista_chamados.html"; return; }
+
+            carregarPrazos();
+            carregarParametros();
+            carregarJustificativas();
+        });
+
+        async function carregarPrazos() {
+            const { data } = await supabaseClient.from('configuracao_prazo').select('*');
+            if (data) data.forEach(p => document.getElementById(`prazo-${p.prioridade}`).value = p.minutos);
+        }
+
+        document.getElementById('form-prazos').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await supabaseClient.from('configuracao_prazo').upsert([
+                { prioridade: 'alta', minutos: document.getElementById('prazo-alta').value },
+                { prioridade: 'media', minutos: document.getElementById('prazo-media').value },
+                { prioridade: 'baixa', minutos: document.getElementById('prazo-baixa').value }
+            ]);
+            mostrarNotificacao("Prazos salvos!", "sucesso");
+        });
+
+        async function carregarParametros() {
+            const { data } = await supabaseClient.from('parametro_formulario').select('*').order('tipo');
+            const tbody = document.getElementById('tabela-parametros');
+            tbody.innerHTML = "";
+            if (data) {
+                data.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-50 text-slate-700";
+                    tr.innerHTML = `<td class="p-2.5"><strong>${p.tipo}</strong></td><td class="p-2.5">${p.valor}</td><td class="p-2.5 text-right"><button onclick="removerParametro(${p.id})" class="text-red-500 font-medium hover:underline text-xs">Deletar</button></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        async function adicionarParametro() {
+            const v = document.getElementById('param-valor').value.trim();
+            if(!v) return;
+            const { error } = await supabaseClient.from('parametro_formulario').insert([{ tipo: document.getElementById('param-tipo').value, valor: v }]);
+            if(error) mostrarNotificacao("Já existe", "erro");
+            else { document.getElementById('param-valor').value = ""; carregarParametros(); }
+        }
+
+        async function removerParametro(id) {
+            await supabaseClient.from('parametro_formulario').delete().eq('id', id);
+            carregarParametros();
+        }
+
+        async function carregarJustificativas() {
+            const { data } = await supabaseClient.from('justificativa').select('*').order('criado_em', { ascending: false });
+            const tbody = document.getElementById('tabela-justificativas');
+            tbody.innerHTML = "";
+            if (data) {
+                data.forEach(j => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-50 text-slate-600";
+                    tr.innerHTML = `<td class="p-3 font-bold">#${j.chamado_id}</td><td class="p-3 font-mono text-[11px] text-industrial-muted">${j.usuario_id.substring(0,8)}...</td><td class="p-3">${j.justificativa}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

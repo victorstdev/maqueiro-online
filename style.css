@@ -1,19 +1,23 @@
-.card-maca {
-    background-color: #ffffff;
-    padding: 1.25rem;
-    border-radius: 1rem;
-    border-left-width: 8px;
-    border-left-style: solid;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 200ms ease;
+#notification-container{
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
 }
-.prioridade-BAIXA { border-left-color: #0ea5e9; }
-.prioridade-MEDIA { border-left-color: #f59e0b; }
-.prioridade-ALTA { border-left-color: #f43f5e; }
-
-.animar-alerta-critico { animation: pulse-urgente 1.5s infinite; }
-
-@keyframes pulse-urgente {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(0.96); opacity: 0.85; }
+.toast {
+    color: #fff;
+    padding: 12px 24px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    animation: fadeIn 0.3s ease-in-out;
+}
+.toast-erro {
+    background: #ff4d4d;
+}
+.toast-sucesso {
+    background: #2ecc71;
+}
+.toast-info {
+    background: #3498db;
 }
